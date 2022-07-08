@@ -1,8 +1,5 @@
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-} from "@material-ui/icons";
+import { Facebook, Instagram, Twitter } from "@material-ui/icons";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { mobile } from "../responsive";
 
@@ -42,6 +39,7 @@ const SocialIcon = styled.div`
   color: black;
   background-color: #${(props) => props.color};
   display: flex;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
   ${mobile({ margin: "0px 15px 0px 0px" })}
@@ -67,7 +65,7 @@ const List = styled.ul`
 
 const ListItem = styled.li`
   width: 50%;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 `;
 
 const Right = styled.div`
@@ -78,7 +76,6 @@ const Right = styled.div`
   flex-direction: column;
   ${mobile({ alignItems: "flex-start" })}
 `;
-
 
 const Footer = () => {
   return (
@@ -96,30 +93,65 @@ const Footer = () => {
       <Center>
         <Title>Useful Links</Title>
         <List>
-          <ListItem>Home</ListItem>
-          <ListItem>Cart</ListItem>
-          <ListItem>Man Fashion</ListItem>
-          <ListItem>Woman Fashion</ListItem>
-          <ListItem>Accessories</ListItem>
-          <ListItem>My Account</ListItem>
-          <ListItem>Order Tracking</ListItem>
-          <ListItem>Wishlist</ListItem>
-          <ListItem>Wishlist</ListItem>
-          <ListItem>Terms</ListItem>
+          <ListItem>
+            <Link to={"/"} style={{ textDecoration: "none", color: "white" }}>
+              Home
+            </Link>
+          </ListItem>
+          <ListItem>
+            <Link
+              to={"/cart"}
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Cart
+            </Link>
+          </ListItem>
+          <ListItem>
+            <Link
+              to={"/products/men"}
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Mens
+            </Link>
+          </ListItem>
+          <ListItem>
+            <Link
+              to={"/products/women"}
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Womens
+            </Link>
+          </ListItem>
+          <ListItem>
+            <Link
+              to={"/products/accessories"}
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Accessories
+            </Link>
+          </ListItem>
+          <ListItem>
+            <Link
+              to={"/products/everyone"}
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Everyone
+            </Link>
+          </ListItem>
         </List>
       </Center>
       <Right>
         <Title>Follow Barça</Title>
         <SocialContainer>
-            <SocialIcon>
-              <Facebook />
-            </SocialIcon>
-            <SocialIcon>
-              <Instagram />
-            </SocialIcon>
-            <SocialIcon>
-              <Twitter />
-            </SocialIcon>
+          <SocialIcon>
+            <Facebook />
+          </SocialIcon>
+          <SocialIcon>
+            <Instagram />
+          </SocialIcon>
+          <SocialIcon>
+            <Twitter />
+          </SocialIcon>
         </SocialContainer>
       </Right>
     </Container>

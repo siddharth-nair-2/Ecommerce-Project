@@ -27,16 +27,19 @@ export const categories = [
     id: 1,
     img: "https://i.postimg.cc/cJ1hvB78/700x1060-23100-M-1.jpg",
     title: "MEN",
+    cat: "men",
   },
   {
     id: 2,
     img: "https://i.postimg.cc/TPxjZqN4/700x1060-23100-MCWF-2.jpg",
     title: "WOMEN",
+    cat: "women"
   },
   {
     id: 3,
     img: "https://i.postimg.cc/3NZW0mFd/700x1060-DB6241-406-1.jpg",
     title: "CHILDREN",
+    cat: "everyone"
   },
 ];
 

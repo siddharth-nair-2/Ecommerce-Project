@@ -1,8 +1,11 @@
 import React from "react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import { login } from "../redux/apiCalls";
 import { mobile } from "../responsive";
 
 const Container = styled.div`
@@ -62,6 +65,11 @@ const Button = styled.button`
   cursor: pointer;
   margin-bottom: 10px;
   transition: all 0.3s ease;
+  &:disabled {
+    color: darkgray;
+    background-color: gray;
+    cursor: not-allowed;
+  }
   &:hover {
     background-color: #d1422c;
     transition: all 0.3s ease;
@@ -73,8 +81,11 @@ const LinkSpan = styled.span`
   display: flex;
   justify-content: space-between;
   margin-top: 15px;
-`
-
+`;
+const Error = styled.span`
+  color: red;
+  font-weight: 700;
+`;
 const Link = styled.a`
   margin: 5px 0px;
   font-size: 14px;
@@ -85,6 +96,16 @@ const Link = styled.a`
 `;
 
 const Login = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const { isFetching, error } = useSelector((state) => state.user);
+
+  const loginHandler = (e) => {
+    e.preventDefault();
+    login(dispatch, { username, password });
+  };
+
   return (
     <React.Fragment>
       <Navbar />
@@ -93,9 +114,19 @@ const Login = () => {
         <Wrapper>
           <Title>SIGN IN</Title>
           <Form>
-            <Input placeholder="username" />
-            <Input placeholder="password" />
-            <Button>LOGIN</Button>
+            <Input
+              placeholder="username"
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Input
+              placeholder="password"
+              type="password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button onClick={loginHandler} disabled={isFetching}>
+              LOGIN
+            </Button>
+            {error && <Error>Something went wrong</Error>}
             <LinkSpan>
               <Link>Forgotten your password?</Link>
               <Link>Create a new account</Link>

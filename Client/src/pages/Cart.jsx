@@ -4,6 +4,15 @@ import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { mobile } from "../responsive";
+import { useSelector } from "react-redux";
+import React from "react";
+import StripeCheckout from "react-stripe-checkout";
+import { useState } from "react";
+import { useEffect } from "react";
+import { userRequest } from "../requestMethods";
+import { Link, useNavigate } from "react-router-dom";
+
+const KEY = process.env.REACT_APP_STRIPE;
 
 const Container = styled.div``;
 
@@ -119,8 +128,7 @@ const ProductPrice = styled.div`
 
 const CartSetter = styled.div`
   border-radius: 50%;
-  color: ${(props) =>
-    props.type === "add" ? "#1ab91a" : "red"};
+  color: ${(props) => (props.type === "add" ? "#1ab91a" : "red")};
   display: flex;
   justify-content: center;
   align-items: center;
@@ -177,6 +185,26 @@ const Button = styled.button`
 `;
 
 const Cart = () => {
+  const cart = useSelector((state) => state.cart);
+  const [stripeToken, setStripeToken] = useState(null);
+  const navigate = useNavigate();
+
+  const onToken = (token) => {
+    setStripeToken(token);
+  };
+
+  useEffect(() => {
+    const makeRequest = async () => {
+      try {
+        const res = await userRequest.post("/checkout/payment", {
+          token: stripeToken.id,
+          amount: cart.total.toFixed(2) * 100,
+        });
+        navigate("/success", { state: { data: res.data, products: cart } });
+      } catch (err) {}
+    };
+    stripeToken && cart.total >= 1 && makeRequest();
+  }, [stripeToken, cart.total, navigate, cart]);
   return (
     <Container>
       <Navbar />
@@ -184,79 +212,69 @@ const Cart = () => {
       <Wrapper>
         <Title>YOUR BAG</Title>
         <Top>
-          <TopButton>CONTINUE SHOPPING</TopButton>
+          <Link to={"/products/all"}>
+            <TopButton>CONTINUE SHOPPING</TopButton>
+          </Link>
           <TopTexts>
             <TopText>Shopping Bag(2)</TopText>
             <TopText>Your Wishlist (0)</TopText>
           </TopTexts>
-          <TopButton type="filled">CHECKOUT NOW</TopButton>
+          <StripeCheckout
+            name="FC Barcelona"
+            image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
+            billingAddress
+            shippingAddress
+            description={`Your total is $${cart.total.toFixed(2)}`}
+            amount={cart.total.toFixed(2) * 100}
+            token={onToken}
+            stripeKey={KEY}
+          >
+            <TopButton type="filled">CHECKOUT NOW</TopButton>
+          </StripeCheckout>
         </Top>
         <Bottom>
           <Info>
-            <Product>
-              <ProductDetail>
-                <Image src="https://i.postimg.cc/8CTLJYxV/700x1060-BLMP0007401705-3-removebg-preview.png" />
-                <Details>
-                  <ProductName>
-                    <b>Product:</b> FC Barcelona Captain’s Shirt
-                  </ProductName>
-                  <ProductId>
-                    <b>ID:</b> 93813718293
-                  </ProductId>
-                  <ProductSize>
-                    <b>Size:</b> 37.5
-                  </ProductSize>
-                </Details>
-              </ProductDetail>
-              <PriceDetail>
-                <ProductAmountContainer>
-                  <CartSetter type="add">
-                    <Add/>
-                  </CartSetter>
-                  <ProductAmount>2</ProductAmount>
-                  <CartSetter>
-                    <Remove/>
-                  </CartSetter>
-                </ProductAmountContainer>
-                <ProductPrice>$ 65.00</ProductPrice>
-              </PriceDetail>
-            </Product>
-            <Hr />
-            <Product>
-              <ProductDetail>
-                <Image src="https://i.postimg.cc/W44hPcQt/700x1060-DN4027-451-S-1-removebg-preview.png" />
-                <Details>
-                  <ProductName>
-                    <b>Product:</b> FC Barcelona Pre-Match Shirt 22/23 – LFP –
-                    Women
-                  </ProductName>
-                  <ProductId>
-                    <b>ID:</b> 93813718293
-                  </ProductId>
-                  <ProductSize>
-                    <b>Size:</b> M
-                  </ProductSize>
-                </Details>
-              </ProductDetail>
-              <PriceDetail>
-                <ProductAmountContainer>
-                  <CartSetter type="add">
-                    <Add/>
-                  </CartSetter>
-                  <ProductAmount>1</ProductAmount>
-                  <CartSetter>
-                    <Remove/>
-                  </CartSetter>
-                </ProductAmountContainer>
-                <ProductPrice>$ 59.99</ProductPrice>
-              </PriceDetail>
-            </Product>
+            {cart.products.map((product) => (
+              <React.Fragment>
+                <Product>
+                  <ProductDetail>
+                    <Image src={product.img} />
+                    <Details>
+                      <ProductName>
+                        <b>Product:</b> {product.title}
+                      </ProductName>
+                      <ProductId>
+                        <b>ID:</b> {product._id}
+                      </ProductId>
+                      <ProductSize>
+                        <b>Size:</b> {product.size}
+                      </ProductSize>
+                    </Details>
+                  </ProductDetail>
+                  <PriceDetail>
+                    <ProductAmountContainer>
+                      <CartSetter type="add">
+                        <Add />
+                      </CartSetter>
+                      <ProductAmount>{product.quantity}</ProductAmount>
+                      <CartSetter>
+                        <Remove />
+                      </CartSetter>
+                    </ProductAmountContainer>
+                    <ProductPrice>
+                      $ {(product.price * product.quantity).toFixed(2)}
+                    </ProductPrice>
+                  </PriceDetail>
+                </Product>
+                <Hr />
+              </React.Fragment>
+            ))}
           </Info>
           <Summary>
             <SummaryTitle>ORDER SUMMARY</SummaryTitle>
             <SummaryItem>
               <SummaryItemText>Subtotal</SummaryItemText>
-              <SummaryItemPrice>$ 80</SummaryItemPrice>
+              <SummaryItemPrice>$ {cart.total.toFixed(2)}</SummaryItemPrice>
             </SummaryItem>
             <SummaryItem>
               <SummaryItemText>Estimated Shipping</SummaryItemText>
@@ -268,9 +286,20 @@ const Cart = () => {
             </SummaryItem>
             <SummaryItem type="total">
               <SummaryItemText>Total</SummaryItemText>
-              <SummaryItemPrice>$ 80</SummaryItemPrice>
+              <SummaryItemPrice>$ {cart.total.toFixed(2)}</SummaryItemPrice>
             </SummaryItem>
-            <Button>CHECKOUT NOW</Button>
+            <StripeCheckout
+              name="FC Barcelona"
+              image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
+              billingAddress
+              shippingAddress
+              description={`Your total is $${cart.total.toFixed(2)}`}
+              amount={cart.total.toFixed(2) * 100}
+              token={onToken}
+              stripeKey={KEY}
+            >
+              <Button>CHECKOUT NOW</Button>
+            </StripeCheckout>
           </Summary>
         </Bottom>
       </Wrapper>

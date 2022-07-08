@@ -1,11 +1,16 @@
 import { Add, Remove } from "@material-ui/icons";
-import React from "react";
+import React, { useState } from "react";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import Newsletter from "../components/Newsletter";
 import { mobile } from "../responsive";
+import { publicRequest } from "../requestMethods";
+import { addProduct } from "../redux/cartRedux";
+import { useDispatch } from "react-redux";
 
 const Container = styled.div``;
 
@@ -22,13 +27,12 @@ const ImgContainer = styled.div`
 const Image = styled.img`
   width: auto;
   height: 80vh;
-  margin-left: 20%;
+  margin-left: 10%;
   ${mobile({ height: "40vh" })}
 `;
 
 const InfoContainer = styled.div`
   flex: 1;
-  padding: 0px 50px;
   ${mobile({ padding: "10px" })}
 `;
 
@@ -129,6 +133,42 @@ const CartSetter = styled.div`
 `;
 
 const Product = () => {
+  const location = useLocation();
+  const id = location.pathname.split("/")[2];
+  const dispatch = useDispatch();
+  const [product, setProduct] = useState({});
+  const [quantity, setQuantity] = useState(1);
+  const [size, setSize] = useState("");
+
+  useEffect(() => {
+    const getProduct = async () => {
+      try {
+        const res = await publicRequest.get("/products/find/" + id);
+        setProduct(res.data);
+      } catch (err) {}
+    };
+    getProduct();
+  }, [id]);
+
+  const quantityHandler = (type) => {
+    if (type === "dec" && quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+    if (type === "inc") {
+      setQuantity(quantity + 1);
+    }
+  };
+
+  const cartHandler = () => {
+    dispatch(
+      addProduct({
+        ...product,
+        quantity,
+        size,
+      })
+    );
+  };
+
   return (
     <React.Fragment>
       <Navbar />
@@ -136,41 +176,33 @@ const Product = () => {
       <Container>
         <Wrapper>
           <ImgContainer>
-            <Image src="https://i.postimg.cc/MHbjRdYg/700x1060-BLMP0007401705-1-removebg-preview.png" />
+            <Image src={product.img} />
           </ImgContainer>
           <InfoContainer>
-            <Title>FC Barcelona Captain’s Shirt</Title>
-            <Desc>
-              Short sleeve shirt with captain’s armband. This product pays
-              tribute to players like Joaquim Rifé, Johan Cruyff, José Mari
-              Bakero, Pep Guardiola, Carles Puyol, Xavi Hernández, Andrés
-              Iniesta and Lionel Messi, who have sported the FC Barcelona
-              captain’s armband throughout our club’s long history.
-            </Desc>
-            <Price>$ 69.99</Price>
+            <Title>{product.title}</Title>
+            <Desc>{product.desc}</Desc>
+            <Price>$ {product.price}</Price>
             <FilterContainer>
               <Filter>
-                <FilterTitle>Size</FilterTitle>
-                <FilterSize>
-                  <FilterSizeOption>XS</FilterSizeOption>
-                  <FilterSizeOption>S</FilterSizeOption>
-                  <FilterSizeOption>M</FilterSizeOption>
-                  <FilterSizeOption>L</FilterSizeOption>
-                  <FilterSizeOption>XL</FilterSizeOption>
+                <FilterTitle>Size:</FilterTitle>
+                <FilterSize onChange={(e) => setSize(e.target.value)}>
+                  {product.size?.map((s) => (
+                    <FilterSizeOption key={s}>{s}</FilterSizeOption>
+                  ))}
                 </FilterSize>
               </Filter>
             </FilterContainer>
             <AddContainer>
               <AmountContainer>
                 <CartSetter type="add">
-                  <Add />
+                  <Add onClick={() => quantityHandler("inc")} />
                 </CartSetter>
-                <Amount>1</Amount>
+                <Amount>{quantity}</Amount>
                 <CartSetter>
-                  <Remove />
+                  <Remove onClick={() => quantityHandler("dec")} />
                 </CartSetter>
               </AmountContainer>
-              <Button>ADD TO CART</Button>
+              <Button onClick={cartHandler}>ADD TO CART</Button>
             </AddContainer>
           </InfoContainer>
         </Wrapper>

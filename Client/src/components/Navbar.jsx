@@ -3,6 +3,8 @@ import { Search, ShoppingCartOutlined } from "@material-ui/icons";
 import React from "react";
 import styled from "styled-components";
 import { mobile } from "../responsive";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Container = styled.div`
   height: 80px;
@@ -54,6 +56,7 @@ const Center = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
 `;
 
 const LogoImage = styled.img`
@@ -84,6 +87,8 @@ const MenuItem = styled.div`
 `;
 
 const Navbar = () => {
+  const quantity = useSelector((state) => state.cart.quantity);
+
   return (
     <Container>
       <Wrapper>
@@ -96,26 +101,34 @@ const Navbar = () => {
                 color: "gray",
                 fontSize: 16,
                 cursor: "pointer",
-                padding: "0px 5px"
+                padding: "0px 5px",
               }}
             />
           </SearchContainer>
         </Left>
-        <Center>
-          <LogoImage
-            src="https://i.postimg.cc/d0YqKLY1/Barcelona-logo-removebg-preview-1.png"
-            alt="fcb logo"
-          />
-          <Logo>FC BARCELONA</Logo>
-        </Center>
+        <Link to={"/"} style={{ textDecoration: "none" }}>
+          <Center>
+            <LogoImage
+              src="https://i.postimg.cc/d0YqKLY1/Barcelona-logo-removebg-preview-1.png"
+              alt="fcb logo"
+            />
+            <Logo>FC BARCELONA</Logo>
+          </Center>
+        </Link>
         <Right>
-          <MenuItem>REGISTER</MenuItem>
-          <MenuItem>SIGN IN</MenuItem>
-          <MenuItem>
-            <Badge badgeContent={4} color="primary">
-              <ShoppingCartOutlined style={{ color: "white" }} />
-            </Badge>
-          </MenuItem>
+          <Link to={"/register"} style={{ textDecoration: "none" }}>
+            <MenuItem>REGISTER</MenuItem>
+          </Link>
+          <Link to={"/login"} style={{ textDecoration: "none" }}>
+            <MenuItem>SIGN IN</MenuItem>
+          </Link>
+          <Link to={"/cart"} style={{ textDecoration: "none" }}>
+            <MenuItem>
+              <Badge badgeContent={quantity} color="primary">
+                <ShoppingCartOutlined style={{ color: "white" }} />
+              </Badge>
+            </MenuItem>
+          </Link>
         </Right>
       </Wrapper>
     </Container>
