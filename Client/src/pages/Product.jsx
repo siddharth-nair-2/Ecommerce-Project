@@ -1,7 +1,7 @@
 import { Add, Remove } from "@material-ui/icons";
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
@@ -132,23 +132,36 @@ const CartSetter = styled.div`
   }
 `;
 
-const Product = () => {
+const Product = ({ prodList }) => {
   const location = useLocation();
   const id = location.pathname.split("/")[2];
   const dispatch = useDispatch();
   const [product, setProduct] = useState({});
+  const [error, setError] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("");
 
   useEffect(() => {
     const getProduct = async () => {
       try {
-        const res = await publicRequest.get("/products/find/" + id);
-        setProduct(res.data);
+        await publicRequest
+          .get("/products/find/" + id)
+          .then((res) => {
+            return res.data;
+          })
+          .then((data) => {
+            return setProduct(data);
+          });
       } catch (err) {}
     };
-    getProduct();
-  }, [id]);
+    if (prodList?.length < 1) {
+    } else if (prodList?.includes(id)) {
+      getProduct();
+    } else {
+      setProduct({});
+      setError(true);
+    }
+  }, [id, prodList]);
 
   const quantityHandler = (type) => {
     if (type === "dec" && quantity > 1) {
@@ -174,38 +187,64 @@ const Product = () => {
       <Navbar />
       <Announcement />
       <Container>
-        <Wrapper>
-          <ImgContainer>
-            <Image src={product.img} />
-          </ImgContainer>
-          <InfoContainer>
-            <Title>{product.title}</Title>
-            <Desc>{product.desc}</Desc>
-            <Price>$ {product.price}</Price>
-            <FilterContainer>
-              <Filter>
-                <FilterTitle>Size:</FilterTitle>
-                <FilterSize onChange={(e) => setSize(e.target.value)}>
-                  {product.size?.map((s) => (
-                    <FilterSizeOption key={s}>{s}</FilterSizeOption>
-                  ))}
-                </FilterSize>
-              </Filter>
-            </FilterContainer>
-            <AddContainer>
-              <AmountContainer>
-                <CartSetter type="add">
-                  <Add onClick={() => quantityHandler("inc")} />
-                </CartSetter>
-                <Amount>{quantity}</Amount>
-                <CartSetter>
-                  <Remove onClick={() => quantityHandler("dec")} />
-                </CartSetter>
-              </AmountContainer>
-              <Button onClick={cartHandler}>ADD TO CART</Button>
-            </AddContainer>
+        {!error ? (
+          <Wrapper>
+            <ImgContainer>
+              <Image src={product.img} />
+            </ImgContainer>
+            <InfoContainer>
+              <Title>{product.title}</Title>
+              <Desc>{product.desc}</Desc>
+              <Price>$ {product.price}</Price>
+              <FilterContainer>
+                <Filter>
+                  <FilterTitle>Size:</FilterTitle>
+                  <FilterSize
+                    defaultValue={"select"}
+                    onChange={(e) => setSize(e.target.value)}
+                  >
+                    <FilterSizeOption disabled value="select">
+                      Select...
+                    </FilterSizeOption>
+                    {product.size?.map((s) => (
+                      <FilterSizeOption key={s}>{s}</FilterSizeOption>
+                    ))}
+                  </FilterSize>
+                </Filter>
+              </FilterContainer>
+              <AddContainer>
+                <AmountContainer>
+                  <CartSetter type="add">
+                    <Add onClick={() => quantityHandler("inc")} />
+                  </CartSetter>
+                  <Amount>{quantity}</Amount>
+                  <CartSetter>
+                    <Remove onClick={() => quantityHandler("dec")} />
+                  </CartSetter>
+                </AmountContainer>
+                <Button onClick={cartHandler}>ADD TO CART</Button>
+              </AddContainer>
+            </InfoContainer>
+          </Wrapper>
+        ) : (
+          <InfoContainer
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              margin: "100px 0px 50px 0px",
+              gap: "40px",
+            }}
+          >
+            <Title style={{ fontSize: "50px" }}>
+              This product does not exist!
+            </Title>
+            <Link to={"/"}>
+              <Button style={{ fontSize: "22px" }}>Return to homepage?</Button>
+            </Link>
           </InfoContainer>
-        </Wrapper>
+        )}
       </Container>
       <Newsletter />
       <Footer />

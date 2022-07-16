@@ -1,9 +1,10 @@
 import styled from "styled-components";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useState } from "react";
 import { userRequest } from "../requestMethods";
+import { cartEmpty } from "../redux/apiCalls";
 
 const Container = styled.div`
   display: flex;
@@ -36,10 +37,16 @@ const Success = () => {
   //in Cart.jsx I sent data and cart. Please check that page for the changes.(in video it's only data)
   const data = location.state.data;
   const cart = location.state.products;
-  console.log(location);
   const currentUser = useSelector((state) => state.user.currentUser);
-  console.log(currentUser);
   const [orderId, setOrderId] = useState(null);
+  const dispatchCartEmpty = useDispatch();
+
+  useEffect(() => {
+    const logoutHandler = () => {
+      cartEmpty(dispatchCartEmpty);
+    };
+    logoutHandler();
+  }, []);
 
   useEffect(() => {
     const createOrder = async () => {
@@ -48,12 +55,11 @@ const Success = () => {
           userId: currentUser._id,
           products: cart.products.map((item) => ({
             productId: item._id,
-            quantity: item._quantity,
+            quantity: item.quantity,
           })),
           amount: cart.total,
           address: data.billing_details.address,
         });
-        console.log(res.data);
         setOrderId(res.data._id);
       } catch {}
     };

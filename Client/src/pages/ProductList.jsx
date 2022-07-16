@@ -79,10 +79,11 @@ const ProductList = () => {
           </Filter>
           <Filter>
             <FilterText>Sort Products:</FilterText>
-            <Select defaultValue={"newest"} onChange={priceHandler}>
-              <Option selected value="newest">
-                Newest
+            <Select defaultValue={"default"} onChange={priceHandler}>
+              <Option disabled value="default">
+                Default
               </Option>
+              <Option value="newest">Newest</Option>
               <Option value="asc">Price (asc)</Option>
               <Option value="desc">Price (desc)</Option>
             </Select>

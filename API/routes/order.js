@@ -11,7 +11,7 @@ const router = require("express").Router();
 
 router.post("/", verifyToken, async (req, res) => {
   const newOrder = new Order(req.body);
-
+  
   try {
     const savedOrder = await newOrder.save();
     res.status(200).json(savedOrder);
@@ -59,10 +59,28 @@ router.get("/find/:userId", verifyTokenAndAuthorization, async (req, res) => {
   }
 });
 
+router.get(
+  "/findProd/:prodId",
+  verifyTokenAndAuthorization,
+  async (req, res) => {
+    try {
+      const orders = await Order.find({
+        products: { $elemMatch: { productId: req.params.prodId } },
+      });
+      res.status(200).json(orders);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  }
+);
+
 // // GET ALL
 router.get("/findAll", verifyTokenAndAdmin, async (req, res) => {
+  const query = req.query.new;
   try {
-    const orders = await Order.find();
+    const orders = query
+      ? await Order.find().sort({ createdAt: -1 }).limit(5)
+      : await Order.find().sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (err) {
     res.status(500).json(err);
@@ -72,13 +90,25 @@ router.get("/findAll", verifyTokenAndAdmin, async (req, res) => {
 // GET MONTHLY STATS
 
 router.get("/income", verifyTokenAndAdmin, async (req, res) => {
+  const productId = req.query.pid;
+  const userId = req.query.uid;
   const date = new Date();
-  const lastMonth = new Date(date.setMonth(date.getMonth() - 1));
-  const previousMonth = new Date(new Date().setMonth(lastMonth.getMonth() - 1));
+  const thisMonth = new Date(date.setMonth(date.getMonth()));
+  const previousMonth = new Date(new Date().setMonth(thisMonth.getMonth() - 6));
 
   try {
     const income = await Order.aggregate([
-      { $match: { createdAt: { $gte: previousMonth } } },
+      {
+        $match: {
+          createdAt: { $gte: previousMonth },
+          ...(productId && {
+            products: { $elemMatch: { productId } },
+          }),
+          ...(userId && {
+            userId: userId,
+          }),
+        },
+      },
       {
         $project: {
           month: { $month: "$createdAt" },
@@ -88,6 +118,138 @@ router.get("/income", verifyTokenAndAdmin, async (req, res) => {
       {
         $group: {
           _id: "$month",
+          total: { $sum: "$sales" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    res.status(200).json(income);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/orderCount", verifyTokenAndAdmin, async (req, res) => {
+  try {
+    const data = await Order.aggregate([
+      {
+        $count: "all_orders",
+      },
+    ]);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/orderCountToday", verifyTokenAndAdmin, async (req, res) => {
+  const date = new Date();
+  date.setUTCHours(0);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+  try {
+    const data = await Order.aggregate([
+      { $match: { createdAt: { $gt: date } } },
+      {
+        $count: "all_orders",
+      },
+    ]);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+router.get("/incomeToday", verifyTokenAndAdmin, async (req, res) => {
+  const date = new Date();
+  date.setUTCHours(0);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+
+  try {
+    const income = await Order.aggregate([
+      { $match: { createdAt: { $gt: date } } },
+      {
+        $project: {
+          date: { $dayOfMonth: "$createdAt" },
+          sales: "$amount",
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          total: { $sum: "$sales" },
+        },
+      },
+    ]);
+    res.status(200).json(income);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/incomeLastWeek", verifyTokenAndAdmin, async (req, res) => {
+  const date = new Date();
+  const lastWeekDate = new Date();
+  lastWeekDate.setDate(date.getDate() - 7);
+
+  try {
+    const income = await Order.aggregate([
+      { $match: { createdAt: { $lt: date, $gt: lastWeekDate } } },
+      {
+        $project: {
+          sales: "$amount",
+        },
+      },
+      {
+        $group: {
+          _id: "total",
+          total: { $sum: "$sales" },
+        },
+      },
+    ]);
+    res.status(200).json(income);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/incomeLastMonth", verifyTokenAndAdmin, async (req, res) => {
+  const date = new Date();
+  const lastWeekDate = new Date();
+  lastWeekDate.setDate(date.getDate() - 30);
+
+  try {
+    const income = await Order.aggregate([
+      { $match: { createdAt: { $lt: date, $gt: lastWeekDate } } },
+      {
+        $project: {
+          sales: "$amount",
+        },
+      },
+      {
+        $group: {
+          _id: "total",
+          total: { $sum: "$sales" },
+        },
+      },
+    ]);
+    res.status(200).json(income);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/incomeAllTime", verifyTokenAndAdmin, async (req, res) => {
+  try {
+    const income = await Order.aggregate([
+      {
+        $project: {
+          sales: "$amount",
+        },
+      },
+      {
+        $group: {
+          _id: "total",
           total: { $sum: "$sales" },
         },
       },

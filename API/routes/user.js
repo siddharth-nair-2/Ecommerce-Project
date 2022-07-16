@@ -56,8 +56,8 @@ router.get("/findAll", verifyTokenAndAdmin, async (req, res) => {
   const query = req.query.new;
   try {
     const user = query
-      ? await User.find().sort({ _id: -1 }).limit(5)
-      : await User.find();
+      ? await User.find().sort({ createdAt: -1 }).limit(5)
+      : await User.find().sort({ createdAt: -1 });
     res.status(200).json(user);
   } catch (err) {
     res.status(500).json(err);
@@ -82,6 +82,43 @@ router.get("/stats", verifyTokenAndAdmin, async (req, res) => {
         $group: {
           _id: "$month",
           total: { $sum: 1 },
+        },
+      },
+    ]);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/userCount", verifyTokenAndAdmin, async (req, res) => {
+  try {
+    const data = await User.aggregate([
+      {
+        $count: "all_users",
+      },
+    ]);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/userCountToday", verifyTokenAndAdmin, async (req, res) => {
+  const date = new Date();
+  date.setUTCHours(0);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+  try {
+    const data = await User.aggregate([
+      {
+        $facet: {
+          matched: [{ $match: { createdAt: { $gte: date } } }],
+        },
+      },
+      {
+        $project: {
+          all_users: { $size: "$matched" },
         },
       },
     ]);

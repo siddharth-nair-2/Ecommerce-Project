@@ -1,6 +1,8 @@
+import { color } from "@mui/system";
 import React from "react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link, Navigate } from "react-router-dom";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
@@ -9,7 +11,7 @@ import { login } from "../redux/apiCalls";
 import { mobile } from "../responsive";
 
 const Container = styled.div`
-  width: 100vw;
+  width: 99.1vw;
   height: 100vh;
   background: linear-gradient(
       rgba(255, 255, 255, 0.7),
@@ -86,7 +88,7 @@ const Error = styled.span`
   color: red;
   font-weight: 700;
 `;
-const Link = styled.a`
+const LinkText = styled.a`
   margin: 5px 0px;
   font-size: 14px;
   max-width: 40%;
@@ -128,8 +130,10 @@ const Login = () => {
             </Button>
             {error && <Error>Something went wrong</Error>}
             <LinkSpan>
-              <Link>Forgotten your password?</Link>
-              <Link>Create a new account</Link>
+              <LinkText>Forgotten your password?</LinkText>
+              <Link to={"/register"} style={{ color: "white" }}>
+                <LinkText>Create a new account</LinkText>
+              </Link>
             </LinkSpan>
           </Form>
         </Wrapper>

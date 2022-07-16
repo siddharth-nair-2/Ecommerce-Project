@@ -1,16 +1,22 @@
-import { Add, Remove } from "@material-ui/icons";
+import { Add, Remove, DeleteForever } from "@material-ui/icons";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { mobile } from "../responsive";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import StripeCheckout from "react-stripe-checkout";
 import { useState } from "react";
 import { useEffect } from "react";
 import { userRequest } from "../requestMethods";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  addSingleProduct,
+  emptyCart,
+  removeProduct,
+  removeSingleProduct,
+} from "../redux/cartRedux";
 
 const KEY = process.env.REACT_APP_STRIPE;
 
@@ -188,6 +194,13 @@ const Cart = () => {
   const cart = useSelector((state) => state.cart);
   const [stripeToken, setStripeToken] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.currentUser);
+
+  const noUserCheckoutHandler = () => {
+    if (cart.total < 1) alert("Please add something to the cart to checkout!");
+    else if (!user) alert("Please login/register to checkout!");
+  };
 
   const onToken = (token) => {
     setStripeToken(token);
@@ -198,13 +211,38 @@ const Cart = () => {
       try {
         const res = await userRequest.post("/checkout/payment", {
           token: stripeToken.id,
-          amount: cart.total.toFixed(2) * 100,
+          amount: cart.total?.toFixed(2) * 100,
         });
         navigate("/success", { state: { data: res.data, products: cart } });
       } catch (err) {}
     };
     stripeToken && cart.total >= 1 && makeRequest();
   }, [stripeToken, cart.total, navigate, cart]);
+
+  const quantityHandler = (type, product) => {
+    if (type === "dec" && product.quantity > 1) {
+      dispatch(
+        removeSingleProduct({
+          ...product,
+        })
+      );
+    }
+    if (type === "inc") {
+      dispatch(
+        addSingleProduct({
+          ...product,
+        })
+      );
+    }
+    if (type === "removeItem") {
+      dispatch(
+        removeProduct({
+          ...product,
+        })
+      );
+    }
+  };
+
   return (
     <Container>
       <Navbar />
@@ -216,26 +254,32 @@ const Cart = () => {
             <TopButton>CONTINUE SHOPPING</TopButton>
           </Link>
           <TopTexts>
-            <TopText>Shopping Bag(2)</TopText>
+            <TopText>Shopping Bag({cart.quantity})</TopText>
             <TopText>Your Wishlist (0)</TopText>
           </TopTexts>
-          <StripeCheckout
-            name="FC Barcelona"
-            image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
-            billingAddress
-            shippingAddress
-            description={`Your total is $${cart.total.toFixed(2)}`}
-            amount={cart.total.toFixed(2) * 100}
-            token={onToken}
-            stripeKey={KEY}
-          >
-            <TopButton type="filled">CHECKOUT NOW</TopButton>
-          </StripeCheckout>
+          {user && cart.total >= 1 ? (
+            <StripeCheckout
+              name="FC Barcelona"
+              image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
+              billingAddress
+              shippingAddress
+              description={`Your total is $${cart.total.toFixed(2)}`}
+              amount={cart.total.toFixed(2) * 100}
+              token={onToken}
+              stripeKey={KEY}
+            >
+              <TopButton type="filled">CHECKOUT NOW</TopButton>
+            </StripeCheckout>
+          ) : (
+            <TopButton onClick={noUserCheckoutHandler} type="filled">
+              CHECKOUT NOW
+            </TopButton>
+          )}
         </Top>
         <Bottom>
           <Info>
             {cart.products.map((product) => (
-              <React.Fragment>
+              <React.Fragment key={`${product._id}${product.size}`}>
                 <Product>
                   <ProductDetail>
                     <Image src={product.img} />
@@ -254,16 +298,28 @@ const Cart = () => {
                   <PriceDetail>
                     <ProductAmountContainer>
                       <CartSetter type="add">
-                        <Add />
+                        <Add onClick={() => quantityHandler("inc", product)} />
                       </CartSetter>
                       <ProductAmount>{product.quantity}</ProductAmount>
                       <CartSetter>
-                        <Remove />
+                        <Remove
+                          onClick={() => quantityHandler("dec", product)}
+                        />
                       </CartSetter>
                     </ProductAmountContainer>
                     <ProductPrice>
                       $ {(product.price * product.quantity).toFixed(2)}
                     </ProductPrice>
+                    <DeleteForever
+                      onClick={() => quantityHandler("removeItem", product)}
+                      style={{
+                        marginTop: "20px",
+                        color: "red",
+                        cursor: "pointer",
+                        width: "30",
+                        height: "30",
+                      }}
+                    />
                   </PriceDetail>
                 </Product>
                 <Hr />
@@ -274,7 +330,9 @@ const Cart = () => {
             <SummaryTitle>ORDER SUMMARY</SummaryTitle>
             <SummaryItem>
               <SummaryItemText>Subtotal</SummaryItemText>
-              <SummaryItemPrice>$ {cart.total.toFixed(2)}</SummaryItemPrice>
+              <SummaryItemPrice>
+                $ {cart.total <= 0.0 ? "0.00" : cart.total?.toFixed(2)}
+              </SummaryItemPrice>
             </SummaryItem>
             <SummaryItem>
               <SummaryItemText>Estimated Shipping</SummaryItemText>
@@ -286,20 +344,26 @@ const Cart = () => {
             </SummaryItem>
             <SummaryItem type="total">
               <SummaryItemText>Total</SummaryItemText>
-              <SummaryItemPrice>$ {cart.total.toFixed(2)}</SummaryItemPrice>
+              <SummaryItemPrice>
+                $ {cart.total <= 0.0 ? "0.00" : cart.total?.toFixed(2)}
+              </SummaryItemPrice>
             </SummaryItem>
-            <StripeCheckout
-              name="FC Barcelona"
-              image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
-              billingAddress
-              shippingAddress
-              description={`Your total is $${cart.total.toFixed(2)}`}
-              amount={cart.total.toFixed(2) * 100}
-              token={onToken}
-              stripeKey={KEY}
-            >
-              <Button>CHECKOUT NOW</Button>
-            </StripeCheckout>
+            {user && cart.total >= 1 ? (
+              <StripeCheckout
+                name="FC Barcelona"
+                image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
+                billingAddress
+                shippingAddress
+                description={`Your total is $${cart.total.toFixed(2)}`}
+                amount={cart.total.toFixed(2) * 100}
+                token={onToken}
+                stripeKey={KEY}
+              >
+                <Button>CHECKOUT NOW</Button>
+              </StripeCheckout>
+            ) : (
+              <Button onClick={noUserCheckoutHandler}>CHECKOUT NOW</Button>
+            )}
           </Summary>
         </Bottom>
       </Wrapper>
