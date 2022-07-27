@@ -259,7 +259,7 @@ const Cart = () => {
           </TopTexts>
           {user && cart.total >= 1 ? (
             <StripeCheckout
-              name="FC Barcelona"
+              name="FootyShop"
               image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
               billingAddress
               shippingAddress
@@ -350,7 +350,7 @@ const Cart = () => {
             </SummaryItem>
             {user && cart.total >= 1 ? (
               <StripeCheckout
-                name="FC Barcelona"
+                name="FootyShop"
                 image="https://i.postimg.cc/ZK32fPq2/15-158518-fc-barcelona-soccer-ball-hd-png-download-removebg-preview.png"
                 billingAddress
                 shippingAddress
