@@ -81,7 +81,7 @@ const Footer = () => {
   return (
     <Container>
       <Left>
-        <Logo>FC Barcelona</Logo>
+        <Logo>FootyShop</Logo>
         <Desc>
           Respect for others is one of the basic requirements of democratic life
           and the capacity to live in society. It affects the individual and has
